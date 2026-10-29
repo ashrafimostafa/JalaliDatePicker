@@ -5,58 +5,85 @@ Highly customizable **Jalali (Persian) / Gregorian** date picker for **Jetpack C
 ## Features
 
 - Jalali and Gregorian calendars with runtime toggle
+- **RTL by default for Jalali**, LTR for Gregorian (overridable)
+- Bundled **Vazirmatn** font (including Farsi-digits variant)
+- **UI Style Factory** — customize colors, typography, shapes, sizes, animations, strings, layout
+- Smooth month slide/fade + day selection scale/color animations
 - Single date and inclusive range selection
 - Present as **inline**, **dialog**, or **modal bottom sheet**
-- Material 3 light / dark theming with full color overrides
+- Material 3 light / dark theming
 - Compact / Medium / **Large** size presets
-- Customizable first day of week (defaults: Saturday for Jalali, Sunday for Gregorian)
-- Persian or Latin digits and labels
-- Coroutine-friendly API via `StateFlow` / `SharedFlow` (no `CoroutineScope` required to construct state)
+- Customizable first day of week (Saturday for Jalali, Sunday for Gregorian)
+- Coroutine-friendly API via `StateFlow` / `SharedFlow`
 
 ## Install (JitPack)
 
 ```kotlin
-// settings.gradle.kts
 dependencyResolutionManagement {
-    repositories {
-        maven(url = "https://jitpack.io")
-    }
+    repositories { maven(url = "https://jitpack.io") }
 }
-```
 
-```kotlin
-// module build.gradle.kts
 dependencies {
-    // Root POM (pulls KMP metadata + Android AAR)
-    implementation("com.github.ashrafimostafa:JalaliDatePicker:0.1.0")
-
-    // Or Android AAR directly:
-    // implementation("com.github.ashrafimostafa.JalaliDatePicker:jalalidatepicker-android:0.1.0")
+    implementation("com.github.ashrafimostafa:JalaliDatePicker:0.2.0")
 }
 ```
-
-Pin to a Git tag / release (for example `0.1.0` or newer).  
-JitPack: https://jitpack.io/#ashrafimostafa/JalaliDatePicker
 
 ## Quick start
 
 ```kotlin
-val state = rememberJalaliDatePickerState(
-    selectionMode = SelectionMode.SINGLE, // or RANGE
-)
+val state = rememberJalaliDatePickerState()
 
 JalaliDatePicker(
     state = state,
-    sizes = JalaliDatePickerDefaults.sizes(DatePickerSize.Large),
-    colors = JalaliDatePickerDefaults.colors(
-        selectedDayContainerColor = MaterialTheme.colorScheme.tertiary,
-    ),
+    size = DatePickerSize.Large,
+    styleFactory = JalaliDatePickerStyleFactory.default(), // Vazir + RTL for Jalali
 )
-
-// Dialog / sheet
-JalaliDatePickerDialog(state = state, onDismissRequest = { /* ... */ })
-JalaliDatePickerBottomSheet(state = state, onDismissRequest = { /* ... */ })
 ```
+
+## Customize everything (factory pattern)
+
+```kotlin
+val styleFactory = JalaliDatePickerStyleFactory.builder()
+    .fontFamily(VazirFontFamily.FarsiDigits) // or VazirFontFamily.Default / your FontFamily
+    .layoutDirection(LayoutDirection.Rtl)    // force RTL, or null for auto
+    .containerCorner(24.dp)
+    .animationsEnabled(true)
+    .colors { scheme ->
+        JalaliDatePickerColors(
+            containerColor = scheme.surfaceContainerHigh,
+            selectedDayContainerColor = scheme.tertiary,
+            selectedDayContentColor = scheme.onTertiary,
+            // ... every color token
+            titleContentColor = scheme.onSurfaceVariant,
+            headlineContentColor = scheme.onSurface,
+            weekdayContentColor = scheme.onSurfaceVariant,
+            dayContentColor = scheme.onSurface,
+            disabledDayContentColor = scheme.onSurface.copy(alpha = 0.38f),
+            todayContentColor = scheme.primary,
+            todayContainerColor = Color.Transparent,
+            rangeSelectionContainerColor = scheme.primaryContainer.copy(alpha = 0.55f),
+            navigationContentColor = scheme.onSurfaceVariant,
+            dividerColor = scheme.outlineVariant,
+            actionContentColor = scheme.primary,
+            modeToggleContentColor = scheme.primary,
+        )
+    }
+    .strings { persian ->
+        JalaliDatePickerStringsFactory.create(persian).copy(confirm = "ثبت")
+    }
+    .animations {
+        JalaliDatePickerAnimationsFactory.create(monthChangeMillis = 400)
+    }
+    .build()
+
+JalaliDatePicker(
+    state = state,
+    styleFactory = styleFactory,
+    showActions = true,
+)
+```
+
+You can also implement `JalaliDatePickerStyleFactory` yourself for full control over each product (`createColors`, `createTypography`, `createShapes`, …).
 
 ## Coroutine / ViewModel usage
 
@@ -64,19 +91,9 @@ JalaliDatePickerBottomSheet(state = state, onDismissRequest = { /* ... */ })
 class MyViewModel : ViewModel() {
     val pickerState = JalaliDatePickerState()
 
-    val selectedDate = pickerState.selectedDate
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
-
     init {
         viewModelScope.launch {
-            pickerState.selectionEvents.collect { event ->
-                when (event) {
-                    is DatePickerEvent.DateConfirmed -> { /* persist */ }
-                    is DatePickerEvent.RangeConfirmed -> { /* persist range */ }
-                    DatePickerEvent.Cancelled -> { /* ... */ }
-                    is DatePickerEvent.RangeStartSelected -> { /* ... */ }
-                }
-            }
+            pickerState.selectionEvents.collect { /* ... */ }
         }
     }
 }
@@ -87,13 +104,11 @@ class MyViewModel : ViewModel() {
 | Module | Role |
 |--------|------|
 | `jalalidatepicker` | KMP library (`commonMain` calendar + state, `androidMain` Compose UI) |
-| `sample` | Demo app (ViewModel + inline / dialog / sheet) |
+| `sample` | Demo app (ViewModel + factory customization) |
 
-## Sample app
+## Font license
 
-```bash
-./gradlew :sample:assembleDebug
-```
+Vazirmatn is included under the SIL Open Font License — see `jalalidatepicker/src/androidMain/assets/OFL-Vazirmatn.txt`.
 
 ## License
 

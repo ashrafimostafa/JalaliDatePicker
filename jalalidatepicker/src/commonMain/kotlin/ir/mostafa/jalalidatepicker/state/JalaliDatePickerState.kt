@@ -250,21 +250,21 @@ class JalaliDatePickerState private constructor(
     }
 
     /**
-     * Days to render for the currently displayed month (includes leading/trailing blanks as null).
+     * Days to render for [yearMonth] (includes leading/trailing blanks as null).
+     * Defaults to the currently displayed month.
      */
-    fun monthGrid(): List<CalendarDate?> {
+    fun monthGrid(yearMonth: YearMonth = _displayedMonth.value): List<CalendarDate?> {
         val type = _calendarType.value
-        val ym = _displayedMonth.value
-        val first = CalendarDate(ym.year, ym.month, 1)
+        val first = CalendarDate(yearMonth.year, yearMonth.month, 1)
         val offset = CalendarEngine.dayOffset(
             CalendarEngine.dayOfWeek(type, first),
             _firstDayOfWeek.value,
         )
-        val daysInMonth = CalendarEngine.daysInMonth(type, ym.year, ym.month)
+        val daysInMonth = CalendarEngine.daysInMonth(type, yearMonth.year, yearMonth.month)
         val cells = ArrayList<CalendarDate?>(42)
         repeat(offset) { cells.add(null) }
         for (day in 1..daysInMonth) {
-            cells.add(CalendarDate(ym.year, ym.month, day))
+            cells.add(CalendarDate(yearMonth.year, yearMonth.month, day))
         }
         while (cells.size % 7 != 0) cells.add(null)
         while (cells.size < 42) cells.add(null)

@@ -20,6 +20,8 @@ data class JalaliDatePickerColors(
     val rangeSelectionContainerColor: Color,
     val navigationContentColor: Color,
     val dividerColor: Color,
+    val actionContentColor: Color = Color.Unspecified,
+    val modeToggleContentColor: Color = Color.Unspecified,
 )
 
 object JalaliDatePickerDefaults {
@@ -36,9 +38,11 @@ object JalaliDatePickerDefaults {
         selectedDayContentColor: Color = MaterialTheme.colorScheme.onPrimary,
         todayContentColor: Color = MaterialTheme.colorScheme.primary,
         todayContainerColor: Color = Color.Transparent,
-        rangeSelectionContainerColor: Color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
+        rangeSelectionContainerColor: Color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f),
         navigationContentColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
         dividerColor: Color = MaterialTheme.colorScheme.outlineVariant,
+        actionContentColor: Color = MaterialTheme.colorScheme.primary,
+        modeToggleContentColor: Color = MaterialTheme.colorScheme.primary,
     ): JalaliDatePickerColors = JalaliDatePickerColors(
         containerColor = containerColor,
         titleContentColor = titleContentColor,
@@ -53,5 +57,7 @@ object JalaliDatePickerDefaults {
         rangeSelectionContainerColor = rangeSelectionContainerColor,
         navigationContentColor = navigationContentColor,
         dividerColor = dividerColor,
+        actionContentColor = actionContentColor,
+        modeToggleContentColor = modeToggleContentColor,
     )
 }

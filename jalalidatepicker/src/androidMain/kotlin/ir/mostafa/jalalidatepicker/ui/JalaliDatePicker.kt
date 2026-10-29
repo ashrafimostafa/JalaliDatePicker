@@ -1,5 +1,11 @@
 package ir.mostafa.jalalidatepicker.ui
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,7 +14,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -19,10 +24,15 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -35,24 +45,57 @@ import ir.mostafa.jalalidatepicker.model.DatePickerSize
 import ir.mostafa.jalalidatepicker.model.DigitMode
 import ir.mostafa.jalalidatepicker.model.SelectionMode
 import ir.mostafa.jalalidatepicker.state.JalaliDatePickerState
+import ir.mostafa.jalalidatepicker.ui.factory.JalaliDatePickerStyle
+import ir.mostafa.jalalidatepicker.ui.factory.JalaliDatePickerStyleFactory
+import ir.mostafa.jalalidatepicker.ui.factory.rememberJalaliDatePickerStyle
 
 /**
- * Inline Material 3 Jalali / Gregorian date picker content.
+ * Inline Material 3 Jalali / Gregorian date picker.
  *
- * Use [JalaliDatePickerDialog] or [JalaliDatePickerBottomSheet] for modal presentations.
+ * UI is fully driven by a [JalaliDatePickerStyle] from a [JalaliDatePickerStyleFactory]
+ * (colors, typography/Vazir, shapes, sizes, animations, strings, RTL/LTR).
  */
 @Composable
 fun JalaliDatePicker(
     state: JalaliDatePickerState,
     modifier: Modifier = Modifier,
     title: String? = null,
+    size: DatePickerSize = DatePickerSize.Medium,
+    styleFactory: JalaliDatePickerStyleFactory = JalaliDatePickerStyleFactory.default(),
     showModeToggle: Boolean = true,
     showActions: Boolean = false,
-    confirmLabel: String = "تأیید",
-    cancelLabel: String = "انصراف",
     usePersianLabels: Boolean = true,
-    colors: JalaliDatePickerColors = JalaliDatePickerDefaults.colors(),
-    sizes: JalaliDatePickerSizes = JalaliDatePickerDefaults.sizes(DatePickerSize.Medium),
+    onConfirm: (() -> Unit)? = null,
+    onCancel: (() -> Unit)? = null,
+) {
+    val calendarType by state.calendarType.collectAsStateWithLifecycle()
+    val style = rememberJalaliDatePickerStyle(
+        factory = styleFactory,
+        calendarType = calendarType,
+        size = size,
+        showModeToggle = showModeToggle,
+        showActions = showActions,
+        usePersianLabels = usePersianLabels,
+    )
+    JalaliDatePicker(
+        state = state,
+        style = style,
+        modifier = modifier,
+        title = title,
+        onConfirm = onConfirm,
+        onCancel = onCancel,
+    )
+}
+
+/**
+ * Inline picker using a pre-built [JalaliDatePickerStyle].
+ */
+@Composable
+fun JalaliDatePicker(
+    state: JalaliDatePickerState,
+    style: JalaliDatePickerStyle,
+    modifier: Modifier = Modifier,
+    title: String? = null,
     onConfirm: (() -> Unit)? = null,
     onCancel: (() -> Unit)? = null,
 ) {
@@ -65,185 +108,254 @@ fun JalaliDatePicker(
     val firstDayOfWeek by state.firstDayOfWeek.collectAsStateWithLifecycle()
     val digitMode by state.digitMode.collectAsStateWithLifecycle()
 
+    val colors = style.colors
+    val sizes = style.sizes
+    val typography = style.typography
+    val shapes = style.shapes
+    val animations = style.animations
+    val strings = style.strings
+    val layout = style.layout
+
     val today = CalendarEngine.today(calendarType)
     val weekdays = DateLabels.orderedWeekdays(firstDayOfWeek)
-    val grid = state.monthGrid()
+    val usePersian = layout.usePersianLabels
+
+    var monthNavDirection by remember { mutableIntStateOf(0) }
 
     val headline = when (selectionMode) {
         SelectionMode.SINGLE -> selectedDate?.let {
-            formatHeadline(it, calendarType, digitMode, usePersianLabels)
-        } ?: defaultTitle(calendarType, usePersianLabels)
+            formatHeadline(it, calendarType, digitMode, usePersian)
+        } ?: (title ?: defaultTitle(calendarType, strings))
 
         SelectionMode.RANGE -> {
             val start = selectedRange?.start ?: rangeStartPending
             val end = selectedRange?.end
             when {
                 start != null && end != null ->
-                    "${formatHeadline(start, calendarType, digitMode, usePersianLabels)} – " +
-                        formatHeadline(end, calendarType, digitMode, usePersianLabels)
+                    "${formatHeadline(start, calendarType, digitMode, usePersian)} – " +
+                        formatHeadline(end, calendarType, digitMode, usePersian)
 
-                start != null -> formatHeadline(start, calendarType, digitMode, usePersianLabels)
-                else -> if (usePersianLabels) "بازه تاریخ را انتخاب کنید" else "Select a date range"
+                start != null -> formatHeadline(start, calendarType, digitMode, usePersian)
+                else -> strings.rangeHint
             }
         }
     }
 
-    Surface(
-        modifier = modifier,
-        color = colors.containerColor,
-        shape = RoundedCornerShape(28.dp),
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(sizes.containerPadding)
-                .fillMaxWidth(),
+    CompositionLocalProvider(LocalLayoutDirection provides layout.layoutDirection) {
+        Surface(
+            modifier = modifier,
+            color = colors.containerColor,
+            shape = shapes.container,
         ) {
-            Text(
-                text = title ?: defaultTitle(calendarType, usePersianLabels),
-                color = colors.titleContentColor,
-                fontSize = sizes.titleTextSize,
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = headline,
-                color = colors.headlineContentColor,
-                fontSize = sizes.headlineTextSize,
-                fontWeight = FontWeight.Normal,
-            )
+            Column(
+                modifier = Modifier
+                    .padding(sizes.containerPadding)
+                    .fillMaxWidth(),
+            ) {
+                Text(
+                    text = title ?: defaultTitle(calendarType, strings),
+                    color = colors.titleContentColor,
+                    style = typography.title,
+                )
+                Spacer(Modifier.height(sizes.rowSpacing))
+                Text(
+                    text = headline,
+                    color = colors.headlineContentColor,
+                    style = typography.headline,
+                )
 
-            if (showModeToggle) {
+                if (layout.showModeToggle) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                    ) {
+                        TextButton(
+                            onClick = {
+                                val next = if (calendarType == CalendarType.JALALI) {
+                                    CalendarType.GREGORIAN
+                                } else {
+                                    CalendarType.JALALI
+                                }
+                                state.setCalendarType(next)
+                                state.setDigitMode(
+                                    if (next == CalendarType.JALALI) {
+                                        DigitMode.PERSIAN
+                                    } else {
+                                        DigitMode.LATIN
+                                    },
+                                )
+                            },
+                        ) {
+                            Text(
+                                text = if (calendarType == CalendarType.JALALI) {
+                                    strings.switchToGregorian
+                                } else {
+                                    strings.switchToJalali
+                                },
+                                color = colors.modeToggleContentColor.takeUnless {
+                                    it == Color.Unspecified
+                                } ?: colors.selectedDayContainerColor,
+                                style = typography.modeToggle,
+                            )
+                        }
+                    }
+                }
+
+                if (layout.showDivider) {
+                    HorizontalDivider(color = colors.dividerColor)
+                    Spacer(Modifier.height(8.dp))
+                }
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    TextButton(
+                    IconButton(
                         onClick = {
-                            val next = if (calendarType == CalendarType.JALALI) {
-                                CalendarType.GREGORIAN
-                            } else {
-                                CalendarType.JALALI
-                            }
-                            state.setCalendarType(next)
-                            state.setDigitMode(
-                                if (next == CalendarType.JALALI) DigitMode.PERSIAN else DigitMode.LATIN,
-                            )
+                            monthNavDirection = -1
+                            state.navigateMonth(-1)
                         },
                     ) {
-                        Text(
-                            text = if (calendarType == CalendarType.JALALI) {
-                                if (usePersianLabels) "میلادی" else "Gregorian"
-                            } else {
-                                if (usePersianLabels) "شمسی" else "Jalali"
-                            },
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                            contentDescription = strings.previousMonth,
+                            tint = colors.navigationContentColor,
+                            modifier = Modifier.size(sizes.navigationIconSize),
+                        )
+                    }
+                    Text(
+                        text = buildString {
+                            append(DateLabels.monthName(calendarType, displayedMonth.month, usePersian))
+                            append(' ')
+                            append(DateLabels.formatNumber(displayedMonth.year, digitMode))
+                        },
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.Center,
+                        color = colors.headlineContentColor,
+                        style = typography.monthLabel,
+                    )
+                    IconButton(
+                        onClick = {
+                            monthNavDirection = 1
+                            state.navigateMonth(1)
+                        },
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = strings.nextMonth,
+                            tint = colors.navigationContentColor,
+                            modifier = Modifier.size(sizes.navigationIconSize),
                         )
                     }
                 }
-            }
 
-            HorizontalDivider(color = colors.dividerColor)
-            Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(sizes.rowSpacing))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                IconButton(onClick = { state.navigateMonth(-1) }) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                        contentDescription = "Previous month",
-                        tint = colors.navigationContentColor,
-                        modifier = Modifier.size(sizes.navigationIconSize),
-                    )
-                }
-                Text(
-                    text = buildString {
-                        append(DateLabels.monthName(calendarType, displayedMonth.month, usePersianLabels))
-                        append(' ')
-                        append(DateLabels.formatNumber(displayedMonth.year, digitMode))
-                    },
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.Center,
-                    color = colors.headlineContentColor,
-                    fontSize = sizes.titleTextSize,
-                    fontWeight = FontWeight.Medium,
-                )
-                IconButton(onClick = { state.navigateMonth(1) }) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = "Next month",
-                        tint = colors.navigationContentColor,
-                        modifier = Modifier.size(sizes.navigationIconSize),
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(sizes.rowSpacing))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                weekdays.forEach { day ->
-                    Text(
-                        text = DateLabels.weekdayShort(day, usePersianLabels),
-                        modifier = Modifier.weight(1f),
-                        textAlign = TextAlign.Center,
-                        color = colors.weekdayContentColor,
-                        fontSize = sizes.weekdayTextSize,
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(sizes.rowSpacing))
-
-            grid.chunked(7).forEach { week ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    week.forEach { date ->
-                        val role = dayRole(
-                            date = date,
+                    weekdays.forEach { day ->
+                        Text(
+                            text = DateLabels.weekdayShort(day, usePersian),
+                            modifier = Modifier.weight(1f),
+                            textAlign = TextAlign.Center,
+                            color = colors.weekdayContentColor,
+                            style = typography.weekday,
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(sizes.rowSpacing))
+
+                if (animations.enabled) {
+                    AnimatedContent(
+                        targetState = displayedMonth,
+                        transitionSpec = {
+                            val forward = monthNavDirection >= 0
+                            (
+                                fadeIn(
+                                    animationSpec = androidx.compose.animation.core.tween(
+                                        animations.contentFadeMillis,
+                                    ),
+                                ) + slideInHorizontally(
+                                    animationSpec = animations.monthSlideSpec,
+                                    initialOffsetX = { full -> if (forward) full / 4 else -full / 4 },
+                                )
+                                ) togetherWith (
+                                fadeOut(
+                                    animationSpec = androidx.compose.animation.core.tween(
+                                        animations.contentFadeMillis,
+                                    ),
+                                ) + slideOutHorizontally(
+                                    animationSpec = animations.monthSlideSpec,
+                                    targetOffsetX = { full -> if (forward) -full / 4 else full / 4 },
+                                )
+                                )
+                        },
+                        label = "monthGrid",
+                    ) { month ->
+                        MonthGrid(
+                            grid = state.monthGrid(month),
                             today = today,
                             selectionMode = selectionMode,
                             selectedDate = selectedDate,
                             selectedRange = selectedRange,
                             rangeStartPending = rangeStartPending,
-                        )
-                        DayCell(
-                            date = date,
-                            enabled = date != null && state.isSelectable(date),
-                            role = role,
                             digitMode = digitMode,
-                            colors = colors,
-                            sizes = sizes,
-                            onClick = state::select,
+                            style = style,
+                            onSelect = state::select,
+                            isSelectable = state::isSelectable,
                         )
                     }
+                } else {
+                    MonthGrid(
+                        grid = state.monthGrid(displayedMonth),
+                        today = today,
+                        selectionMode = selectionMode,
+                        selectedDate = selectedDate,
+                        selectedRange = selectedRange,
+                        rangeStartPending = rangeStartPending,
+                        digitMode = digitMode,
+                        style = style,
+                        onSelect = state::select,
+                        isSelectable = state::isSelectable,
+                    )
                 }
-                Spacer(Modifier.height(sizes.rowSpacing))
-            }
 
-            if (showActions) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                ) {
-                    TextButton(
-                        onClick = {
-                            state.cancel()
-                            onCancel?.invoke()
-                        },
+                if (layout.showActions) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
                     ) {
-                        Text(cancelLabel)
-                    }
-                    TextButton(
-                        onClick = {
-                            state.confirm()
-                            onConfirm?.invoke()
-                        },
-                    ) {
-                        Text(confirmLabel)
+                        TextButton(
+                            onClick = {
+                                state.cancel()
+                                onCancel?.invoke()
+                            },
+                        ) {
+                            Text(
+                                text = strings.cancel,
+                                color = colors.actionContentColor.takeUnless {
+                                    it == Color.Unspecified
+                                } ?: colors.selectedDayContainerColor,
+                                style = typography.action,
+                            )
+                        }
+                        TextButton(
+                            onClick = {
+                                state.confirm()
+                                onConfirm?.invoke()
+                            },
+                        ) {
+                            Text(
+                                text = strings.confirm,
+                                color = colors.actionContentColor.takeUnless {
+                                    it == Color.Unspecified
+                                } ?: colors.selectedDayContainerColor,
+                                style = typography.action,
+                            )
+                        }
                     }
                 }
             }
@@ -251,9 +363,58 @@ fun JalaliDatePicker(
     }
 }
 
-private fun defaultTitle(type: CalendarType, persian: Boolean): String = when (type) {
-    CalendarType.JALALI -> if (persian) "انتخاب تاریخ" else "Select date"
-    CalendarType.GREGORIAN -> if (persian) "انتخاب تاریخ میلادی" else "Select Gregorian date"
+@Composable
+private fun MonthGrid(
+    grid: List<CalendarDate?>,
+    today: CalendarDate,
+    selectionMode: SelectionMode,
+    selectedDate: CalendarDate?,
+    selectedRange: CalendarDateRange?,
+    rangeStartPending: CalendarDate?,
+    digitMode: DigitMode,
+    style: JalaliDatePickerStyle,
+    onSelect: (CalendarDate) -> Unit,
+    isSelectable: (CalendarDate) -> Boolean,
+) {
+    Column {
+        grid.chunked(7).forEach { week ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                week.forEach { date ->
+                    DayCell(
+                        date = date,
+                        enabled = date != null && isSelectable(date),
+                        role = dayRole(
+                            date = date,
+                            today = today,
+                            selectionMode = selectionMode,
+                            selectedDate = selectedDate,
+                            selectedRange = selectedRange,
+                            rangeStartPending = rangeStartPending,
+                        ),
+                        digitMode = digitMode,
+                        colors = style.colors,
+                        sizes = style.sizes,
+                        typography = style.typography,
+                        shapes = style.shapes,
+                        animations = style.animations,
+                        onClick = onSelect,
+                    )
+                }
+            }
+            Spacer(Modifier.height(style.sizes.rowSpacing))
+        }
+    }
+}
+
+private fun defaultTitle(
+    type: CalendarType,
+    strings: ir.mostafa.jalalidatepicker.ui.factory.JalaliDatePickerStrings,
+): String = when (type) {
+    CalendarType.JALALI -> strings.titleJalali
+    CalendarType.GREGORIAN -> strings.titleGregorian
 }
 
 private fun formatHeadline(

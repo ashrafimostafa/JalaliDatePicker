@@ -2,10 +2,14 @@ package ir.mostafa.jalalidatepicker.ui
 
 import androidx.compose.material3.AlertDialog
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ir.mostafa.jalalidatepicker.model.DatePickerSize
 import ir.mostafa.jalalidatepicker.state.JalaliDatePickerState
+import ir.mostafa.jalalidatepicker.ui.factory.JalaliDatePickerStyleFactory
+import ir.mostafa.jalalidatepicker.ui.factory.rememberJalaliDatePickerStyle
 
 /**
  * Material 3 dialog presentation of [JalaliDatePicker].
@@ -16,16 +20,23 @@ fun JalaliDatePickerDialog(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
     title: String? = null,
+    size: DatePickerSize = DatePickerSize.Medium,
+    styleFactory: JalaliDatePickerStyleFactory = JalaliDatePickerStyleFactory.default(),
     showModeToggle: Boolean = true,
-    confirmLabel: String = "تأیید",
-    cancelLabel: String = "انصراف",
     usePersianLabels: Boolean = true,
-    colors: JalaliDatePickerColors = JalaliDatePickerDefaults.colors(),
-    sizes: JalaliDatePickerSizes = JalaliDatePickerDefaults.sizes(DatePickerSize.Medium),
     properties: DialogProperties = DialogProperties(usePlatformDefaultWidth = false),
     onConfirm: () -> Unit = onDismissRequest,
     onCancel: () -> Unit = onDismissRequest,
 ) {
+    val calendarType by state.calendarType.collectAsStateWithLifecycle()
+    val style = rememberJalaliDatePickerStyle(
+        factory = styleFactory,
+        calendarType = calendarType,
+        size = size,
+        showModeToggle = showModeToggle,
+        showActions = true,
+        usePersianLabels = usePersianLabels,
+    )
     AlertDialog(
         onDismissRequest = {
             state.cancel()
@@ -37,22 +48,12 @@ fun JalaliDatePickerDialog(
         text = {
             JalaliDatePicker(
                 state = state,
+                style = style,
                 title = title,
-                showModeToggle = showModeToggle,
-                showActions = true,
-                confirmLabel = confirmLabel,
-                cancelLabel = cancelLabel,
-                usePersianLabels = usePersianLabels,
-                colors = colors,
-                sizes = sizes,
-                onConfirm = {
-                    onConfirm()
-                },
-                onCancel = {
-                    onCancel()
-                },
+                onConfirm = onConfirm,
+                onCancel = onCancel,
             )
         },
-        containerColor = colors.containerColor,
+        containerColor = style.colors.containerColor,
     )
 }

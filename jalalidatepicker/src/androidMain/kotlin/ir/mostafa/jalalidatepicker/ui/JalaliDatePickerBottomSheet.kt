@@ -7,10 +7,14 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ir.mostafa.jalalidatepicker.model.DatePickerSize
 import ir.mostafa.jalalidatepicker.state.JalaliDatePickerState
+import ir.mostafa.jalalidatepicker.ui.factory.JalaliDatePickerStyleFactory
+import ir.mostafa.jalalidatepicker.ui.factory.rememberJalaliDatePickerStyle
 
 /**
  * Material 3 modal bottom sheet presentation of [JalaliDatePicker].
@@ -22,15 +26,22 @@ fun JalaliDatePickerBottomSheet(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
     title: String? = null,
+    size: DatePickerSize = DatePickerSize.Medium,
+    styleFactory: JalaliDatePickerStyleFactory = JalaliDatePickerStyleFactory.default(),
     showModeToggle: Boolean = true,
-    confirmLabel: String = "تأیید",
-    cancelLabel: String = "انصراف",
     usePersianLabels: Boolean = true,
-    colors: JalaliDatePickerColors = JalaliDatePickerDefaults.colors(),
-    sizes: JalaliDatePickerSizes = JalaliDatePickerDefaults.sizes(DatePickerSize.Medium),
     onConfirm: () -> Unit = onDismissRequest,
     onCancel: () -> Unit = onDismissRequest,
 ) {
+    val calendarType by state.calendarType.collectAsStateWithLifecycle()
+    val style = rememberJalaliDatePickerStyle(
+        factory = styleFactory,
+        calendarType = calendarType,
+        size = size,
+        showModeToggle = showModeToggle,
+        showActions = true,
+        usePersianLabels = usePersianLabels,
+    )
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(
         onDismissRequest = {
@@ -38,7 +49,7 @@ fun JalaliDatePickerBottomSheet(
             onCancel()
         },
         sheetState = sheetState,
-        containerColor = colors.containerColor,
+        containerColor = style.colors.containerColor,
         modifier = modifier,
     ) {
         Column(
@@ -48,14 +59,8 @@ fun JalaliDatePickerBottomSheet(
         ) {
             JalaliDatePicker(
                 state = state,
+                style = style,
                 title = title,
-                showModeToggle = showModeToggle,
-                showActions = true,
-                confirmLabel = confirmLabel,
-                cancelLabel = cancelLabel,
-                usePersianLabels = usePersianLabels,
-                colors = colors,
-                sizes = sizes,
                 onConfirm = onConfirm,
                 onCancel = onCancel,
             )
