@@ -27,11 +27,16 @@ dependencyResolutionManagement {
 ```kotlin
 // module build.gradle.kts
 dependencies {
+    // Root POM (pulls KMP metadata + Android AAR)
     implementation("com.github.ashrafimostafa:JalaliDatePicker:0.1.0")
+
+    // Or Android AAR directly:
+    // implementation("com.github.ashrafimostafa.JalaliDatePicker:jalalidatepicker-android:0.1.0")
 }
 ```
 
-Pin to a Git tag / release (for example `0.1.0` or newer).
+Pin to a Git tag / release (for example `0.1.0` or newer).  
+JitPack: https://jitpack.io/#ashrafimostafa/JalaliDatePicker
 
 ## Quick start
 
