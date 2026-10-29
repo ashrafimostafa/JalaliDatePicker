@@ -11,7 +11,7 @@ group = "com.github.mostafa"
 version = "0.1.0"
 
 kotlin {
-    androidLibrary {
+    android {
         namespace = "ir.mostafa.jalalidatepicker"
         compileSdk = libs.versions.compileSdk.get().toInt()
         minSdk = libs.versions.minSdk.get().toInt()
@@ -23,6 +23,8 @@ kotlin {
         androidResources {
             enable = true
         }
+
+        withHostTest {}
     }
 
     sourceSets {
@@ -35,7 +37,7 @@ kotlin {
         }
         androidMain.dependencies {
             implementation(libs.androidx.core.ktx)
-            implementation(platform(libs.androidx.compose.bom))
+            implementation(project.dependencies.platform(libs.androidx.compose.bom))
             implementation(libs.androidx.compose.ui)
             implementation(libs.androidx.compose.ui.tooling.preview)
             implementation(libs.androidx.compose.foundation)
