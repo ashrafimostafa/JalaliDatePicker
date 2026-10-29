@@ -9,6 +9,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -45,6 +46,7 @@ internal fun DayCell(
     date: CalendarDate?,
     enabled: Boolean,
     role: DaySelectionRole,
+    isToday: Boolean = false,
     digitMode: DigitMode,
     colors: JalaliDatePickerColors,
     sizes: JalaliDatePickerSizes,
@@ -54,7 +56,12 @@ internal fun DayCell(
     onClick: (CalendarDate) -> Unit,
 ) {
     if (date == null) {
-        Box(modifier = Modifier.size(sizes.dayCellSize))
+        Box(
+            modifier = Modifier.defaultMinSize(
+                minWidth = sizes.dayTouchTarget,
+                minHeight = sizes.dayTouchTarget,
+            ),
+        )
         return
     }
 
@@ -108,7 +115,10 @@ internal fun DayCell(
     val todayBorder = maxOf(shapes.todayBorderWidth, 2.dp)
 
     Box(
-        modifier = Modifier.size(sizes.dayCellSize),
+        modifier = Modifier.defaultMinSize(
+            minWidth = sizes.dayTouchTarget,
+            minHeight = sizes.dayTouchTarget,
+        ),
         contentAlignment = Alignment.Center,
     ) {
         if (inRangeBand && role != DaySelectionRole.Selected) {
@@ -153,14 +163,17 @@ internal fun DayCell(
                         typography.day
                     },
                 )
-                if (role == DaySelectionRole.Today && !isEndpoint) {
+                if (isToday) {
                     Spacer(Modifier.height(2.dp))
                     Box(
                         modifier = Modifier
                             .width(6.dp)
                             .height(6.dp)
                             .clip(CircleShape)
-                            .background(colors.todayContentColor),
+                            .background(
+                                if (isEndpoint) colors.selectedDayContentColor
+                                else colors.todayContentColor,
+                            ),
                     )
                 }
             }

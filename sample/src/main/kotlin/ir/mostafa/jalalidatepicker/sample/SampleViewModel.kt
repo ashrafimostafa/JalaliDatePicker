@@ -4,8 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ir.mostafa.jalalidatepicker.calendar.CalendarDate
 import ir.mostafa.jalalidatepicker.calendar.CalendarDateRange
+import ir.mostafa.jalalidatepicker.calendar.CalendarType
+import ir.mostafa.jalalidatepicker.calendar.DayOfWeek
 import ir.mostafa.jalalidatepicker.model.DatePickerEvent
 import ir.mostafa.jalalidatepicker.model.DatePickerSize
+import ir.mostafa.jalalidatepicker.model.DigitMode
 import ir.mostafa.jalalidatepicker.model.SelectionMode
 import ir.mostafa.jalalidatepicker.state.JalaliDatePickerState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,8 +20,14 @@ import kotlinx.coroutines.launch
 
 class SampleViewModel : ViewModel() {
 
+    /**
+     * Calendar model is configured in code only (no UI Jalali/Miladi toggle).
+     */
     val pickerState = JalaliDatePickerState(
+        calendarType = CalendarType.JALALI,
         selectionMode = SelectionMode.SINGLE,
+        firstDayOfWeek = DayOfWeek.SATURDAY,
+        digitMode = DigitMode.PERSIAN,
     )
 
     val selectedDate: StateFlow<CalendarDate?> = pickerState.selectedDate
@@ -64,9 +73,10 @@ class SampleViewModel : ViewModel() {
 
     fun cycleSize() {
         _pickerSize.value = when (_pickerSize.value) {
+            DatePickerSize.Small -> DatePickerSize.Compact
             DatePickerSize.Compact -> DatePickerSize.Medium
             DatePickerSize.Medium -> DatePickerSize.Large
-            DatePickerSize.Large -> DatePickerSize.Compact
+            DatePickerSize.Large -> DatePickerSize.Small
         }
     }
 

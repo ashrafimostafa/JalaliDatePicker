@@ -16,6 +16,8 @@ data class JalaliDatePickerStrings(
     val today: String,
     val previousDecade: String,
     val nextDecade: String,
+    val rangeStartHint: String,
+    val rangeEndHint: String,
 )
 
 object JalaliDatePickerStringsFactory {
@@ -34,6 +36,8 @@ object JalaliDatePickerStringsFactory {
                 today = "امروز",
                 previousDecade = "دهه قبل",
                 nextDecade = "دهه بعد",
+                rangeStartHint = "تاریخ شروع را انتخاب کنید",
+                rangeEndHint = "تاریخ پایان را انتخاب کنید",
             )
         } else {
             JalaliDatePickerStrings(
@@ -49,6 +53,8 @@ object JalaliDatePickerStringsFactory {
                 today = "Today",
                 previousDecade = "Previous decade",
                 nextDecade = "Next decade",
+                rangeStartHint = "Select start date",
+                rangeEndHint = "Select end date",
             )
         }
 }

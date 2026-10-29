@@ -33,6 +33,10 @@ object JalaliDatePickerTypographyFactory {
         val daySp: Int
         val actionSp: Int
         when (size) {
+            DatePickerSize.Small -> {
+                titleSp = 11; headlineSp = 18; monthSp = 13
+                weekdaySp = 10; daySp = 12; actionSp = 12
+            }
             DatePickerSize.Compact -> {
                 titleSp = 12; headlineSp = 20; monthSp = 14
                 weekdaySp = 11; daySp = 13; actionSp = 13
@@ -42,8 +46,8 @@ object JalaliDatePickerTypographyFactory {
                 weekdaySp = 12; daySp = 14; actionSp = 14
             }
             DatePickerSize.Large -> {
-                titleSp = 16; headlineSp = 32; monthSp = 18
-                weekdaySp = 14; daySp = 18; actionSp = 16
+                titleSp = 16; headlineSp = 28; monthSp = 17
+                weekdaySp = 13; daySp = 17; actionSp = 15
             }
         }
         return JalaliDatePickerTypography(

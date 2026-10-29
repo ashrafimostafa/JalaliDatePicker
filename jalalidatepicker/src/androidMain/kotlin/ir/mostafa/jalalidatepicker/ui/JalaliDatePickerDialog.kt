@@ -11,9 +11,6 @@ import ir.mostafa.jalalidatepicker.state.JalaliDatePickerState
 import ir.mostafa.jalalidatepicker.ui.factory.JalaliDatePickerStyleFactory
 import ir.mostafa.jalalidatepicker.ui.factory.rememberJalaliDatePickerStyle
 
-/**
- * Material 3 dialog presentation of [JalaliDatePicker].
- */
 @Composable
 fun JalaliDatePickerDialog(
     state: JalaliDatePickerState,
@@ -22,7 +19,6 @@ fun JalaliDatePickerDialog(
     title: String? = null,
     size: DatePickerSize = DatePickerSize.Medium,
     styleFactory: JalaliDatePickerStyleFactory = JalaliDatePickerStyleFactory.default(),
-    showModeToggle: Boolean = true,
     usePersianLabels: Boolean = true,
     properties: DialogProperties = DialogProperties(usePlatformDefaultWidth = false),
     onConfirm: () -> Unit = onDismissRequest,
@@ -33,7 +29,6 @@ fun JalaliDatePickerDialog(
         factory = styleFactory,
         calendarType = calendarType,
         size = size,
-        showModeToggle = showModeToggle,
         showActions = true,
         usePersianLabels = usePersianLabels,
     )

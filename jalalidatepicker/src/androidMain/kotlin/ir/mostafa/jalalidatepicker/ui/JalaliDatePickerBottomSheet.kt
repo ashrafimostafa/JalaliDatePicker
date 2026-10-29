@@ -16,9 +16,6 @@ import ir.mostafa.jalalidatepicker.state.JalaliDatePickerState
 import ir.mostafa.jalalidatepicker.ui.factory.JalaliDatePickerStyleFactory
 import ir.mostafa.jalalidatepicker.ui.factory.rememberJalaliDatePickerStyle
 
-/**
- * Material 3 modal bottom sheet presentation of [JalaliDatePicker].
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JalaliDatePickerBottomSheet(
@@ -28,7 +25,6 @@ fun JalaliDatePickerBottomSheet(
     title: String? = null,
     size: DatePickerSize = DatePickerSize.Medium,
     styleFactory: JalaliDatePickerStyleFactory = JalaliDatePickerStyleFactory.default(),
-    showModeToggle: Boolean = true,
     usePersianLabels: Boolean = true,
     onConfirm: () -> Unit = onDismissRequest,
     onCancel: () -> Unit = onDismissRequest,
@@ -38,7 +34,6 @@ fun JalaliDatePickerBottomSheet(
         factory = styleFactory,
         calendarType = calendarType,
         size = size,
-        showModeToggle = showModeToggle,
         showActions = true,
         usePersianLabels = usePersianLabels,
     )

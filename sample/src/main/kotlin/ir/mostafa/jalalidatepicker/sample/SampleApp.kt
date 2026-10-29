@@ -28,10 +28,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ir.mostafa.jalalidatepicker.model.DatePickerSize
+import ir.mostafa.jalalidatepicker.model.MonthCountMode
 import ir.mostafa.jalalidatepicker.model.SelectionMode
 import ir.mostafa.jalalidatepicker.ui.JalaliDatePicker
 import ir.mostafa.jalalidatepicker.ui.JalaliDatePickerBottomSheet
-import ir.mostafa.jalalidatepicker.ui.JalaliDatePickerColors
+import ir.mostafa.jalalidatepicker.ui.JalaliDatePickerDefaults
 import ir.mostafa.jalalidatepicker.ui.JalaliDatePickerDialog
 import ir.mostafa.jalalidatepicker.ui.factory.JalaliDatePickerStyleFactory
 import ir.mostafa.jalalidatepicker.ui.font.VazirFontFamily
@@ -48,36 +49,17 @@ fun SampleApp(viewModel: SampleViewModel = viewModel()) {
     val showSheet by viewModel.showSheet.collectAsStateWithLifecycle()
     val selectionMode by viewModel.pickerState.selectionMode.collectAsStateWithLifecycle()
 
-    val styleFactory = remember(pickerSize) {
+    val styleFactory = remember {
         JalaliDatePickerStyleFactory.builder()
             .fontFamily(VazirFontFamily.FarsiDigits)
+            .monthCountMode(MonthCountMode.Auto) // 2 months on tablet / wide screens
             .animationsEnabled(true)
             .containerCorner(24.dp)
             .colors { scheme ->
-                JalaliDatePickerColors(
-                    containerColor = scheme.surfaceContainerHigh,
-                    titleContentColor = scheme.onSurfaceVariant,
-                    headlineContentColor = scheme.onSurface,
-                    weekdayContentColor = scheme.onSurfaceVariant,
-                    dayContentColor = scheme.onSurface,
-                    disabledDayContentColor = scheme.onSurface.copy(alpha = 0.38f),
-                    selectedDayContainerColor = if (pickerSize == DatePickerSize.Large) {
-                        scheme.tertiary
-                    } else {
-                        scheme.primary
-                    },
-                    selectedDayContentColor = if (pickerSize == DatePickerSize.Large) {
-                        scheme.onTertiary
-                    } else {
-                        scheme.onPrimary
-                    },
-                    todayContentColor = scheme.primary,
+                JalaliDatePickerDefaults.fromColorScheme(
+                    colorScheme = scheme,
+                    selectedDayContainerColor = scheme.primary,
                     todayContainerColor = scheme.primaryContainer.copy(alpha = 0.55f),
-                    rangeSelectionContainerColor = scheme.primaryContainer.copy(alpha = 0.55f),
-                    navigationContentColor = scheme.onSurfaceVariant,
-                    dividerColor = scheme.outlineVariant,
-                    actionContentColor = scheme.primary,
-                    modeToggleContentColor = scheme.primary,
                 )
             }
             .build()
@@ -88,10 +70,6 @@ fun SampleApp(viewModel: SampleViewModel = viewModel()) {
             darkColorScheme(primary = Color(0xFF7DDBA3))
         } else {
             lightColorScheme(primary = Color(0xFF0B6E4F))
-        },
-        typography = MaterialTheme.typography.let { base ->
-            // App chrome can stay default; picker uses Vazir via style factory.
-            base
         },
     ) {
         Scaffold(
@@ -134,6 +112,10 @@ fun SampleApp(viewModel: SampleViewModel = viewModel()) {
                 Text("انتخاب‌شده: ${selectedDate ?: "—"}")
                 Text("بازه: ${selectedRange ?: "—"}")
                 Text("رویداد: $lastEvent")
+                Text(
+                    "تقویم و روز اول هفته فقط از کد تنظیم می‌شوند (جلالی / شنبه).",
+                    style = MaterialTheme.typography.bodySmall,
+                )
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TextButton(onClick = viewModel::openDialog) { Text("دیالوگ") }

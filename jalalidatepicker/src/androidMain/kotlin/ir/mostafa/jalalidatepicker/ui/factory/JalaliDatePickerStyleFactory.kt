@@ -5,24 +5,22 @@ import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import ir.mostafa.jalalidatepicker.calendar.CalendarType
 import ir.mostafa.jalalidatepicker.model.DatePickerSize
+import ir.mostafa.jalalidatepicker.model.MonthCountMode
 import ir.mostafa.jalalidatepicker.ui.JalaliDatePickerColors
+import ir.mostafa.jalalidatepicker.ui.JalaliDatePickerDefaults
 import ir.mostafa.jalalidatepicker.ui.JalaliDatePickerSizes
 import ir.mostafa.jalalidatepicker.ui.font.VazirFontFamily
+import ir.mostafa.jalalidatepicker.ui.sizes
 
 /**
  * Abstract factory for every UI concern of the date picker.
- *
- * Implement this (or use [JalaliDatePickerStyleFactoryBuilder]) to customize
- * colors, typography, shapes, sizes, animations, strings, and layout/RTL.
  */
 interface JalaliDatePickerStyleFactory {
     fun createColors(colorScheme: ColorScheme): JalaliDatePickerColors
@@ -33,7 +31,6 @@ interface JalaliDatePickerStyleFactory {
     fun createStrings(usePersianLabels: Boolean): JalaliDatePickerStrings
     fun createLayout(
         calendarType: CalendarType,
-        showModeToggle: Boolean,
         showActions: Boolean,
         usePersianLabels: Boolean,
     ): JalaliDatePickerLayoutConfig
@@ -42,7 +39,6 @@ interface JalaliDatePickerStyleFactory {
         colorScheme: ColorScheme,
         calendarType: CalendarType = CalendarType.JALALI,
         size: DatePickerSize = DatePickerSize.Medium,
-        showModeToggle: Boolean = true,
         showActions: Boolean = false,
         usePersianLabels: Boolean = true,
     ): JalaliDatePickerStyle = JalaliDatePickerStyle(
@@ -52,7 +48,7 @@ interface JalaliDatePickerStyleFactory {
         shapes = createShapes(),
         animations = createAnimations(),
         strings = createStrings(usePersianLabels),
-        layout = createLayout(calendarType, showModeToggle, showActions, usePersianLabels),
+        layout = createLayout(calendarType, showActions, usePersianLabels),
     )
 
     companion object {
@@ -64,65 +60,17 @@ interface JalaliDatePickerStyleFactory {
     }
 }
 
-/**
- * Default factory: Vazir (FD) typography, Material 3 colors, Jalali → RTL.
- */
 class DefaultJalaliDatePickerStyleFactory(
     private val fontFamily: FontFamily = VazirFontFamily.FarsiDigits,
     private val forceLayoutDirection: LayoutDirection? = null,
+    private val monthCountMode: MonthCountMode = MonthCountMode.Auto,
 ) : JalaliDatePickerStyleFactory {
 
     override fun createColors(colorScheme: ColorScheme): JalaliDatePickerColors =
-        JalaliDatePickerColors(
-            containerColor = colorScheme.surfaceContainerHigh,
-            titleContentColor = colorScheme.onSurfaceVariant,
-            headlineContentColor = colorScheme.onSurface,
-            weekdayContentColor = colorScheme.onSurfaceVariant,
-            dayContentColor = colorScheme.onSurface,
-            disabledDayContentColor = colorScheme.onSurface.copy(alpha = 0.38f),
-            selectedDayContainerColor = colorScheme.primary,
-            selectedDayContentColor = colorScheme.onPrimary,
-            todayContentColor = colorScheme.primary,
-            todayContainerColor = colorScheme.primaryContainer.copy(alpha = 0.55f),
-            rangeSelectionContainerColor = colorScheme.primaryContainer.copy(alpha = 0.55f),
-            navigationContentColor = colorScheme.onSurfaceVariant,
-            dividerColor = colorScheme.outlineVariant,
-            actionContentColor = colorScheme.primary,
-            modeToggleContentColor = colorScheme.primary,
-        )
+        JalaliDatePickerDefaults.fromColorScheme(colorScheme)
 
-    override fun createSizes(size: DatePickerSize): JalaliDatePickerSizes = when (size) {
-        DatePickerSize.Compact -> JalaliDatePickerSizes(
-            containerPadding = 12.dp,
-            dayCellSize = 36.dp,
-            dayTextSize = 13.sp,
-            weekdayTextSize = 11.sp,
-            headlineTextSize = 20.sp,
-            titleTextSize = 12.sp,
-            navigationIconSize = 20.dp,
-            rowSpacing = 2.dp,
-        )
-        DatePickerSize.Medium -> JalaliDatePickerSizes(
-            containerPadding = 16.dp,
-            dayCellSize = 44.dp,
-            dayTextSize = 14.sp,
-            weekdayTextSize = 12.sp,
-            headlineTextSize = 24.sp,
-            titleTextSize = 14.sp,
-            navigationIconSize = 24.dp,
-            rowSpacing = 4.dp,
-        )
-        DatePickerSize.Large -> JalaliDatePickerSizes(
-            containerPadding = 20.dp,
-            dayCellSize = 56.dp,
-            dayTextSize = 18.sp,
-            weekdayTextSize = 14.sp,
-            headlineTextSize = 32.sp,
-            titleTextSize = 16.sp,
-            navigationIconSize = 28.dp,
-            rowSpacing = 6.dp,
-        )
-    }
+    override fun createSizes(size: DatePickerSize): JalaliDatePickerSizes =
+        JalaliDatePickerDefaults.sizes(size)
 
     override fun createTypography(size: DatePickerSize): JalaliDatePickerTypography =
         JalaliDatePickerTypographyFactory.create(size = size, fontFamily = fontFamily)
@@ -138,39 +86,35 @@ class DefaultJalaliDatePickerStyleFactory(
 
     override fun createLayout(
         calendarType: CalendarType,
-        showModeToggle: Boolean,
         showActions: Boolean,
         usePersianLabels: Boolean,
     ): JalaliDatePickerLayoutConfig = JalaliDatePickerLayoutFactory.create(
         calendarType = calendarType,
-        showModeToggle = showModeToggle,
         showActions = showActions,
         usePersianLabels = usePersianLabels,
+        monthCountMode = monthCountMode,
         forceDirection = forceLayoutDirection,
     )
 }
 
-/**
- * Fluent builder over [DefaultJalaliDatePickerStyleFactory] — override any product.
- */
 class JalaliDatePickerStyleFactoryBuilder {
     private var fontFamily: FontFamily = VazirFontFamily.FarsiDigits
     private var forceLayoutDirection: LayoutDirection? = null
+    private var monthCountMode: MonthCountMode = MonthCountMode.Auto
     private var colorsOverride: ((ColorScheme) -> JalaliDatePickerColors)? = null
     private var sizesOverride: ((DatePickerSize) -> JalaliDatePickerSizes)? = null
     private var typographyOverride: ((DatePickerSize, FontFamily) -> JalaliDatePickerTypography)? = null
     private var shapesOverride: (() -> JalaliDatePickerShapes)? = null
     private var animationsOverride: (() -> JalaliDatePickerAnimations)? = null
     private var stringsOverride: ((Boolean) -> JalaliDatePickerStrings)? = null
-    private var layoutOverride: (
-        (CalendarType, Boolean, Boolean, Boolean) -> JalaliDatePickerLayoutConfig
-    )? = null
+    private var layoutOverride: ((CalendarType, Boolean, Boolean) -> JalaliDatePickerLayoutConfig)? = null
     private var containerCorner: Dp = 28.dp
     private var dayShape: Shape = CircleShape
     private var animationsEnabled: Boolean = true
 
     fun fontFamily(family: FontFamily) = apply { fontFamily = family }
     fun layoutDirection(direction: LayoutDirection?) = apply { forceLayoutDirection = direction }
+    fun monthCountMode(mode: MonthCountMode) = apply { monthCountMode = mode }
     fun colors(block: (ColorScheme) -> JalaliDatePickerColors) = apply { colorsOverride = block }
     fun sizes(block: (DatePickerSize) -> JalaliDatePickerSizes) = apply { sizesOverride = block }
     fun typography(block: (DatePickerSize, FontFamily) -> JalaliDatePickerTypography) =
@@ -178,9 +122,8 @@ class JalaliDatePickerStyleFactoryBuilder {
     fun shapes(block: () -> JalaliDatePickerShapes) = apply { shapesOverride = block }
     fun animations(block: () -> JalaliDatePickerAnimations) = apply { animationsOverride = block }
     fun strings(block: (Boolean) -> JalaliDatePickerStrings) = apply { stringsOverride = block }
-    fun layout(
-        block: (CalendarType, Boolean, Boolean, Boolean) -> JalaliDatePickerLayoutConfig,
-    ) = apply { layoutOverride = block }
+    fun layout(block: (CalendarType, Boolean, Boolean) -> JalaliDatePickerLayoutConfig) =
+        apply { layoutOverride = block }
 
     fun containerCorner(dp: Dp) = apply { containerCorner = dp }
     fun dayShape(shape: Shape) = apply { dayShape = shape }
@@ -190,6 +133,7 @@ class JalaliDatePickerStyleFactoryBuilder {
         val base = DefaultJalaliDatePickerStyleFactory(
             fontFamily = fontFamily,
             forceLayoutDirection = forceLayoutDirection,
+            monthCountMode = monthCountMode,
         )
         val corner = containerCorner
         val day = dayShape
@@ -220,12 +164,11 @@ class JalaliDatePickerStyleFactoryBuilder {
 
             override fun createLayout(
                 calendarType: CalendarType,
-                showModeToggle: Boolean,
                 showActions: Boolean,
                 usePersianLabels: Boolean,
             ): JalaliDatePickerLayoutConfig =
-                layoutOverride?.invoke(calendarType, showModeToggle, showActions, usePersianLabels)
-                    ?: base.createLayout(calendarType, showModeToggle, showActions, usePersianLabels)
+                layoutOverride?.invoke(calendarType, showActions, usePersianLabels)
+                    ?: base.createLayout(calendarType, showActions, usePersianLabels)
         }
     }
 }
@@ -235,25 +178,15 @@ fun rememberJalaliDatePickerStyle(
     factory: JalaliDatePickerStyleFactory = JalaliDatePickerStyleFactory.default(),
     calendarType: CalendarType = CalendarType.JALALI,
     size: DatePickerSize = DatePickerSize.Medium,
-    showModeToggle: Boolean = true,
     showActions: Boolean = false,
     usePersianLabels: Boolean = true,
 ): JalaliDatePickerStyle {
     val colorScheme = MaterialTheme.colorScheme
-    return remember(
-        factory,
-        colorScheme,
-        calendarType,
-        size,
-        showModeToggle,
-        showActions,
-        usePersianLabels,
-    ) {
+    return remember(factory, colorScheme, calendarType, size, showActions, usePersianLabels) {
         factory.create(
             colorScheme = colorScheme,
             calendarType = calendarType,
             size = size,
-            showModeToggle = showModeToggle,
             showActions = showActions,
             usePersianLabels = usePersianLabels,
         )
