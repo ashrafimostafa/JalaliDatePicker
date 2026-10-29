@@ -1,0 +1,42 @@
+# Built artifacts
+*.apk
+*.ap_
+*.aab
+*.aar
+*.dex
+*.class
+
+# Build output
+bin/
+gen/
+out/
+release/
+build/
+.gradle/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Machine-local
+local.properties
+
+# Signing / secrets
+*.jks
+*.keystore
+*.key
+*.pem
+*.p12
+keystore.properties
+secrets.properties
+google-services.json
+agconnect-services.json
+
+# IDE / OS
+*.iml
+.idea/
+.DS_Store
+*.log
+*.zip
+
+# Kotlin
+.kotlin/
