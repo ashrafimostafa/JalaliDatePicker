@@ -27,11 +27,11 @@ dependencyResolutionManagement {
 ```kotlin
 // module build.gradle.kts
 dependencies {
-    implementation("com.github.USERNAME:JalaliDatePicker:Tag")
+    implementation("com.github.ashrafimostafa:JalaliDatePicker:0.1.0")
 }
 ```
 
-Replace `USERNAME` with your GitHub username and `Tag` with a release tag (for example `0.1.0`).
+Pin to a Git tag / release (for example `0.1.0` or newer).
 
 ## Quick start
 

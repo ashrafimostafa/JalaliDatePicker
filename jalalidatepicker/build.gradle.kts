@@ -7,7 +7,7 @@ plugins {
     `maven-publish`
 }
 
-group = "com.github.mostafa"
+group = "com.github.ashrafimostafa"
 version = "0.1.0"
 
 kotlin {
@@ -59,7 +59,7 @@ publishing {
             description.set(
                 "Highly customizable Jalali / Gregorian date picker for Jetpack Compose (KMP-ready).",
             )
-            url.set("https://github.com/mostafa/JalaliDatePicker")
+            url.set("https://github.com/ashrafimostafa/JalaliDatePicker")
             licenses {
                 license {
                     name.set("The Apache License, Version 2.0")
