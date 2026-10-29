@@ -51,3 +51,21 @@ kotlin {
 dependencies {
     "androidRuntimeClasspath"(libs.androidx.compose.ui.tooling)
 }
+
+publishing {
+    publications.withType<MavenPublication>().configureEach {
+        pom {
+            name.set("JalaliDatePicker")
+            description.set(
+                "Highly customizable Jalali / Gregorian date picker for Jetpack Compose (KMP-ready).",
+            )
+            url.set("https://github.com/mostafa/JalaliDatePicker")
+            licenses {
+                license {
+                    name.set("The Apache License, Version 2.0")
+                    url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
+                }
+            }
+        }
+    }
+}
