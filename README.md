@@ -8,7 +8,9 @@ Highly customizable **Jalali (Persian) / Gregorian** date picker for **Jetpack C
 - **RTL by default for Jalali**, LTR for Gregorian (overridable)
 - Bundled **Vazirmatn** font (including Farsi-digits variant)
 - **UI Style Factory** — customize colors, typography, shapes, sizes, animations, strings, layout
-- Smooth month slide/fade + day selection scale/color animations
+- Swipe between months; tap **month** / **year** for grids (years by decade)
+- **Today** button; today is visually distinct (fill + border + dot)
+- Fast month transitions (optimized animations)
 - Single date and inclusive range selection
 - Present as **inline**, **dialog**, or **modal bottom sheet**
 - Material 3 light / dark theming

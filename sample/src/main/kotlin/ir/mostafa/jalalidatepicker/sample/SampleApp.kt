@@ -72,7 +72,7 @@ fun SampleApp(viewModel: SampleViewModel = viewModel()) {
                         scheme.onPrimary
                     },
                     todayContentColor = scheme.primary,
-                    todayContainerColor = Color.Transparent,
+                    todayContainerColor = scheme.primaryContainer.copy(alpha = 0.55f),
                     rangeSelectionContainerColor = scheme.primaryContainer.copy(alpha = 0.55f),
                     navigationContentColor = scheme.onSurfaceVariant,
                     dividerColor = scheme.outlineVariant,

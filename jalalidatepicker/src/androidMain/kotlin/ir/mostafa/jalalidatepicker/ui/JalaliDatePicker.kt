@@ -1,11 +1,14 @@
 package ir.mostafa.jalalidatepicker.ui
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -26,14 +30,20 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ir.mostafa.jalalidatepicker.calendar.CalendarDate
@@ -48,12 +58,12 @@ import ir.mostafa.jalalidatepicker.state.JalaliDatePickerState
 import ir.mostafa.jalalidatepicker.ui.factory.JalaliDatePickerStyle
 import ir.mostafa.jalalidatepicker.ui.factory.JalaliDatePickerStyleFactory
 import ir.mostafa.jalalidatepicker.ui.factory.rememberJalaliDatePickerStyle
+import kotlin.math.abs
 
 /**
  * Inline Material 3 Jalali / Gregorian date picker.
  *
- * UI is fully driven by a [JalaliDatePickerStyle] from a [JalaliDatePickerStyleFactory]
- * (colors, typography/Vazir, shapes, sizes, animations, strings, RTL/LTR).
+ * Supports swipe between months, month/year grids, and a Today shortcut.
  */
 @Composable
 fun JalaliDatePicker(
@@ -87,9 +97,6 @@ fun JalaliDatePicker(
     )
 }
 
-/**
- * Inline picker using a pre-built [JalaliDatePickerStyle].
- */
 @Composable
 fun JalaliDatePicker(
     state: JalaliDatePickerState,
@@ -111,16 +118,19 @@ fun JalaliDatePicker(
     val colors = style.colors
     val sizes = style.sizes
     val typography = style.typography
-    val shapes = style.shapes
     val animations = style.animations
     val strings = style.strings
     val layout = style.layout
 
-    val today = CalendarEngine.today(calendarType)
-    val weekdays = DateLabels.orderedWeekdays(firstDayOfWeek)
+    val today = remember(calendarType) { CalendarEngine.today(calendarType) }
+    val weekdays = remember(firstDayOfWeek) { DateLabels.orderedWeekdays(firstDayOfWeek) }
     val usePersian = layout.usePersianLabels
 
     var monthNavDirection by remember { mutableIntStateOf(0) }
+    var displayMode by remember { mutableStateOf(PickerDisplayMode.Days) }
+    var dragAccum by remember { mutableFloatStateOf(0f) }
+    val density = LocalDensity.current
+    val swipeThresholdPx = with(density) { 48.dp.toPx() }
 
     val headline = when (selectionMode) {
         SelectionMode.SINGLE -> selectedDate?.let {
@@ -145,7 +155,7 @@ fun JalaliDatePicker(
         Surface(
             modifier = modifier,
             color = colors.containerColor,
-            shape = shapes.container,
+            shape = style.shapes.container,
         ) {
             Column(
                 modifier = Modifier
@@ -164,11 +174,28 @@ fun JalaliDatePicker(
                     style = typography.headline,
                 )
 
-                if (layout.showModeToggle) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End,
-                    ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (layout.showTodayButton) {
+                        TextButton(
+                            onClick = {
+                                displayMode = PickerDisplayMode.Days
+                                state.goToToday(alsoSelect = selectionMode == SelectionMode.SINGLE)
+                            },
+                        ) {
+                            Text(
+                                text = strings.today,
+                                color = colors.todayContentColor,
+                                style = typography.action,
+                            )
+                        }
+                    } else {
+                        Spacer(Modifier.weight(1f))
+                    }
+                    if (layout.showModeToggle) {
                         TextButton(
                             onClick = {
                                 val next = if (calendarType == CalendarType.JALALI) {
@@ -176,6 +203,7 @@ fun JalaliDatePicker(
                                 } else {
                                     CalendarType.JALALI
                                 }
+                                displayMode = PickerDisplayMode.Days
                                 state.setCalendarType(next)
                                 state.setDigitMode(
                                     if (next == CalendarType.JALALI) {
@@ -206,43 +234,99 @@ fun JalaliDatePicker(
                     Spacer(Modifier.height(8.dp))
                 }
 
+                // Header: prev | month (tap) year (tap) | next
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     IconButton(
                         onClick = {
-                            monthNavDirection = -1
-                            state.navigateMonth(-1)
+                            when (displayMode) {
+                                PickerDisplayMode.Days -> {
+                                    monthNavDirection = -1
+                                    state.navigateMonth(-1)
+                                }
+                                PickerDisplayMode.Months -> Unit
+                                PickerDisplayMode.Years -> state.navigateYear(-10)
+                            }
                         },
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                            contentDescription = strings.previousMonth,
+                            contentDescription = when (displayMode) {
+                                PickerDisplayMode.Years -> strings.previousDecade
+                                else -> strings.previousMonth
+                            },
                             tint = colors.navigationContentColor,
                             modifier = Modifier.size(sizes.navigationIconSize),
                         )
                     }
-                    Text(
-                        text = buildString {
-                            append(DateLabels.monthName(calendarType, displayedMonth.month, usePersian))
-                            append(' ')
-                            append(DateLabels.formatNumber(displayedMonth.year, digitMode))
-                        },
+
+                    Row(
                         modifier = Modifier.weight(1f),
-                        textAlign = TextAlign.Center,
-                        color = colors.headlineContentColor,
-                        style = typography.monthLabel,
-                    )
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = DateLabels.monthName(
+                                calendarType,
+                                displayedMonth.month,
+                                usePersian,
+                            ),
+                            modifier = Modifier
+                                .clickable(role = Role.Button) {
+                                    displayMode = if (displayMode == PickerDisplayMode.Months) {
+                                        PickerDisplayMode.Days
+                                    } else {
+                                        PickerDisplayMode.Months
+                                    }
+                                }
+                                .padding(horizontal = 6.dp, vertical = 4.dp),
+                            color = if (displayMode == PickerDisplayMode.Months) {
+                                colors.selectedDayContainerColor
+                            } else {
+                                colors.headlineContentColor
+                            },
+                            style = typography.monthLabel,
+                        )
+                        Text(
+                            text = DateLabels.formatNumber(displayedMonth.year, digitMode),
+                            modifier = Modifier
+                                .clickable(role = Role.Button) {
+                                    displayMode = if (displayMode == PickerDisplayMode.Years) {
+                                        PickerDisplayMode.Days
+                                    } else {
+                                        PickerDisplayMode.Years
+                                    }
+                                }
+                                .padding(horizontal = 6.dp, vertical = 4.dp),
+                            color = if (displayMode == PickerDisplayMode.Years) {
+                                colors.selectedDayContainerColor
+                            } else {
+                                colors.headlineContentColor
+                            },
+                            style = typography.monthLabel,
+                        )
+                    }
+
                     IconButton(
                         onClick = {
-                            monthNavDirection = 1
-                            state.navigateMonth(1)
+                            when (displayMode) {
+                                PickerDisplayMode.Days -> {
+                                    monthNavDirection = 1
+                                    state.navigateMonth(1)
+                                }
+                                PickerDisplayMode.Months -> Unit
+                                PickerDisplayMode.Years -> state.navigateYear(10)
+                            }
                         },
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription = strings.nextMonth,
+                            contentDescription = when (displayMode) {
+                                PickerDisplayMode.Years -> strings.nextDecade
+                                else -> strings.nextMonth
+                            },
                             tint = colors.navigationContentColor,
                             modifier = Modifier.size(sizes.navigationIconSize),
                         )
@@ -251,76 +335,145 @@ fun JalaliDatePicker(
 
                 Spacer(Modifier.height(sizes.rowSpacing))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    weekdays.forEach { day ->
-                        Text(
-                            text = DateLabels.weekdayShort(day, usePersian),
-                            modifier = Modifier.weight(1f),
-                            textAlign = TextAlign.Center,
-                            color = colors.weekdayContentColor,
-                            style = typography.weekday,
+                when (displayMode) {
+                    PickerDisplayMode.Months -> {
+                        MonthPickerGrid(
+                            calendarType = calendarType,
+                            selectedMonth = displayedMonth.month,
+                            usePersian = usePersian,
+                            style = style,
+                            onMonthSelected = { month ->
+                                state.setMonth(month)
+                                displayMode = PickerDisplayMode.Days
+                            },
                         )
                     }
-                }
 
-                Spacer(Modifier.height(sizes.rowSpacing))
-
-                if (animations.enabled) {
-                    AnimatedContent(
-                        targetState = displayedMonth,
-                        transitionSpec = {
-                            val forward = monthNavDirection >= 0
-                            (
-                                fadeIn(
-                                    animationSpec = androidx.compose.animation.core.tween(
-                                        animations.contentFadeMillis,
-                                    ),
-                                ) + slideInHorizontally(
-                                    animationSpec = animations.monthSlideSpec,
-                                    initialOffsetX = { full -> if (forward) full / 4 else -full / 4 },
-                                )
-                                ) togetherWith (
-                                fadeOut(
-                                    animationSpec = androidx.compose.animation.core.tween(
-                                        animations.contentFadeMillis,
-                                    ),
-                                ) + slideOutHorizontally(
-                                    animationSpec = animations.monthSlideSpec,
-                                    targetOffsetX = { full -> if (forward) -full / 4 else full / 4 },
-                                )
-                                )
-                        },
-                        label = "monthGrid",
-                    ) { month ->
-                        MonthGrid(
-                            grid = state.monthGrid(month),
-                            today = today,
-                            selectionMode = selectionMode,
-                            selectedDate = selectedDate,
-                            selectedRange = selectedRange,
-                            rangeStartPending = rangeStartPending,
+                    PickerDisplayMode.Years -> {
+                        YearPickerGrid(
+                            displayed = displayedMonth,
                             digitMode = digitMode,
                             style = style,
-                            onSelect = state::select,
-                            isSelectable = state::isSelectable,
+                            onYearSelected = { year ->
+                                state.setYear(year)
+                                displayMode = PickerDisplayMode.Months
+                            },
+                            onDecadeChange = { delta -> state.navigateYear(delta) },
                         )
                     }
-                } else {
-                    MonthGrid(
-                        grid = state.monthGrid(displayedMonth),
-                        today = today,
-                        selectionMode = selectionMode,
-                        selectedDate = selectedDate,
-                        selectedRange = selectedRange,
-                        rangeStartPending = rangeStartPending,
-                        digitMode = digitMode,
-                        style = style,
-                        onSelect = state::select,
-                        isSelectable = state::isSelectable,
-                    )
+
+                    PickerDisplayMode.Days -> {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            weekdays.forEach { day ->
+                                Text(
+                                    text = DateLabels.weekdayShort(day, usePersian),
+                                    modifier = Modifier.weight(1f),
+                                    textAlign = TextAlign.Center,
+                                    color = colors.weekdayContentColor,
+                                    style = typography.weekday,
+                                )
+                            }
+                        }
+
+                        Spacer(Modifier.height(sizes.rowSpacing))
+
+                        val isRtl = layout.layoutDirection == LayoutDirection.Rtl
+                        val swipeModifier = if (layout.enableMonthSwipe) {
+                            Modifier.pointerInput(displayedMonth, isRtl) {
+                                detectHorizontalDragGestures(
+                                    onDragStart = { dragAccum = 0f },
+                                    onDragEnd = {
+                                        if (abs(dragAccum) >= swipeThresholdPx) {
+                                            // In LTR: drag right (positive) → previous month
+                                            // In RTL: visual direction flips with AutoMirrored arrows;
+                                            // keep natural "finger follows content" feel.
+                                            val goNext = if (isRtl) {
+                                                dragAccum > 0
+                                            } else {
+                                                dragAccum < 0
+                                            }
+                                            monthNavDirection = if (goNext) 1 else -1
+                                            state.navigateMonth(if (goNext) 1 else -1)
+                                        }
+                                        dragAccum = 0f
+                                    },
+                                    onDragCancel = { dragAccum = 0f },
+                                    onHorizontalDrag = { change, amount ->
+                                        change.consume()
+                                        dragAccum += amount
+                                    },
+                                )
+                            }
+                        } else {
+                            Modifier
+                        }
+
+                        if (animations.enabled) {
+                            AnimatedContent(
+                                targetState = displayedMonth,
+                                modifier = swipeModifier.fillMaxWidth(),
+                                transitionSpec = {
+                                    val forward = monthNavDirection >= 0
+                                    val enterOffset = { full: Int ->
+                                        if (forward) full / 5 else -full / 5
+                                    }
+                                    val exitOffset = { full: Int ->
+                                        if (forward) -full / 5 else full / 5
+                                    }
+                                    (
+                                        fadeIn(tween(animations.contentFadeMillis)) +
+                                            slideInHorizontally(
+                                                animationSpec = animations.monthSlideSpec,
+                                                initialOffsetX = enterOffset,
+                                            )
+                                        ) togetherWith (
+                                        fadeOut(tween(animations.contentFadeMillis)) +
+                                            slideOutHorizontally(
+                                                animationSpec = animations.monthSlideSpec,
+                                                targetOffsetX = exitOffset,
+                                            )
+                                        ) using SizeTransform(clip = false)
+                                },
+                                label = "monthGrid",
+                            ) { month ->
+                                val grid = remember(month, firstDayOfWeek, calendarType) {
+                                    state.monthGrid(month)
+                                }
+                                MonthGrid(
+                                    grid = grid,
+                                    today = today,
+                                    selectionMode = selectionMode,
+                                    selectedDate = selectedDate,
+                                    selectedRange = selectedRange,
+                                    rangeStartPending = rangeStartPending,
+                                    digitMode = digitMode,
+                                    style = style,
+                                    onSelect = state::select,
+                                    isSelectable = state::isSelectable,
+                                )
+                            }
+                        } else {
+                            val grid = remember(displayedMonth, firstDayOfWeek, calendarType) {
+                                state.monthGrid(displayedMonth)
+                            }
+                            MonthGrid(
+                                modifier = swipeModifier,
+                                grid = grid,
+                                today = today,
+                                selectionMode = selectionMode,
+                                selectedDate = selectedDate,
+                                selectedRange = selectedRange,
+                                rangeStartPending = rangeStartPending,
+                                digitMode = digitMode,
+                                style = style,
+                                onSelect = state::select,
+                                isSelectable = state::isSelectable,
+                            )
+                        }
+                    }
                 }
 
                 if (layout.showActions) {
@@ -375,8 +528,9 @@ private fun MonthGrid(
     style: JalaliDatePickerStyle,
     onSelect: (CalendarDate) -> Unit,
     isSelectable: (CalendarDate) -> Boolean,
+    modifier: Modifier = Modifier,
 ) {
-    Column {
+    Column(modifier = modifier) {
         grid.chunked(7).forEach { week ->
             Row(
                 modifier = Modifier.fillMaxWidth(),

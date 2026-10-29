@@ -13,6 +13,9 @@ data class JalaliDatePickerStrings(
     val switchToJalali: String,
     val previousMonth: String,
     val nextMonth: String,
+    val today: String,
+    val previousDecade: String,
+    val nextDecade: String,
 )
 
 object JalaliDatePickerStringsFactory {
@@ -28,6 +31,9 @@ object JalaliDatePickerStringsFactory {
                 switchToJalali = "شمسی",
                 previousMonth = "ماه قبل",
                 nextMonth = "ماه بعد",
+                today = "امروز",
+                previousDecade = "دهه قبل",
+                nextDecade = "دهه بعد",
             )
         } else {
             JalaliDatePickerStrings(
@@ -40,6 +46,9 @@ object JalaliDatePickerStringsFactory {
                 switchToJalali = "Jalali",
                 previousMonth = "Previous month",
                 nextMonth = "Next month",
+                today = "Today",
+                previousDecade = "Previous decade",
+                nextDecade = "Next decade",
             )
         }
 }

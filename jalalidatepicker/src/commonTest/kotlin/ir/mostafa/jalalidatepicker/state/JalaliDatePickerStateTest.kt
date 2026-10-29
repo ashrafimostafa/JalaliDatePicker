@@ -72,4 +72,21 @@ class JalaliDatePickerStateTest {
         assertEquals(CalendarDate(2024, 3, 20), state.selectedDate.value)
         assertEquals(DayOfWeek.SUNDAY, state.firstDayOfWeek.value)
     }
+
+    @Test
+    fun goToToday_and_yearNavigation() {
+        val state = JalaliDatePickerState(
+            calendarType = CalendarType.JALALI,
+            displayedMonth = ir.mostafa.jalalidatepicker.calendar.YearMonth(1380, 5),
+        )
+        state.setYear(1400)
+        assertEquals(1400, state.displayedMonth.value.year)
+        assertEquals(5, state.displayedMonth.value.month)
+        state.navigateYear(-10)
+        assertEquals(1390, state.displayedMonth.value.year)
+        state.goToToday()
+        val today = ir.mostafa.jalalidatepicker.calendar.JalaliCalendar.today()
+        assertEquals(today.year, state.displayedMonth.value.year)
+        assertEquals(today.month, state.displayedMonth.value.month)
+    }
 }

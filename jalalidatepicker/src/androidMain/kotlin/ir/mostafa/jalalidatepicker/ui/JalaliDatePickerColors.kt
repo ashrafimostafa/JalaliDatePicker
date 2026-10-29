@@ -37,7 +37,7 @@ object JalaliDatePickerDefaults {
         selectedDayContainerColor: Color = MaterialTheme.colorScheme.primary,
         selectedDayContentColor: Color = MaterialTheme.colorScheme.onPrimary,
         todayContentColor: Color = MaterialTheme.colorScheme.primary,
-        todayContainerColor: Color = Color.Transparent,
+        todayContainerColor: Color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f),
         rangeSelectionContainerColor: Color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f),
         navigationContentColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
         dividerColor: Color = MaterialTheme.colorScheme.outlineVariant,

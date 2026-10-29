@@ -11,6 +11,8 @@ data class JalaliDatePickerLayoutConfig(
     val showActions: Boolean,
     val showDivider: Boolean,
     val usePersianLabels: Boolean,
+    val showTodayButton: Boolean,
+    val enableMonthSwipe: Boolean,
 )
 
 object JalaliDatePickerLayoutFactory {
@@ -24,6 +26,8 @@ object JalaliDatePickerLayoutFactory {
         showActions: Boolean = false,
         showDivider: Boolean = true,
         usePersianLabels: Boolean = true,
+        showTodayButton: Boolean = true,
+        enableMonthSwipe: Boolean = true,
         forceDirection: LayoutDirection? = null,
     ): JalaliDatePickerLayoutConfig = JalaliDatePickerLayoutConfig(
         layoutDirection = forceDirection ?: when (calendarType) {
@@ -34,5 +38,7 @@ object JalaliDatePickerLayoutFactory {
         showActions = showActions,
         showDivider = showDivider,
         usePersianLabels = usePersianLabels,
+        showTodayButton = showTodayButton,
+        enableMonthSwipe = enableMonthSwipe,
     )
 }

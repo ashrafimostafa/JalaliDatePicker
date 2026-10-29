@@ -179,6 +179,35 @@ class JalaliDatePickerState private constructor(
         _displayedMonth.update { it.plusMonths(delta) }
     }
 
+    fun navigateYear(delta: Int) {
+        _displayedMonth.update { YearMonth(it.year + delta, it.month) }
+    }
+
+    fun setYear(year: Int) {
+        _displayedMonth.update { YearMonth(year, it.month) }
+    }
+
+    fun setMonth(month: Int) {
+        require(month in 1..12)
+        _displayedMonth.update { YearMonth(it.year, month) }
+    }
+
+    /** Jump displayed month (and optionally selection) to today. */
+    fun goToToday(alsoSelect: Boolean = false) {
+        val today = CalendarEngine.today(_calendarType.value)
+        _displayedMonth.value = YearMonth.from(today)
+        if (alsoSelect && isSelectable(today)) {
+            when (_selectionMode.value) {
+                SelectionMode.SINGLE -> _selectedDate.value = today
+                SelectionMode.RANGE -> {
+                    _selectedRange.value = null
+                    _rangeStartPending.value = null
+                    select(today)
+                }
+            }
+        }
+    }
+
     fun isSelectable(date: CalendarDate): Boolean {
         val min = _minDate.value
         val max = _maxDate.value

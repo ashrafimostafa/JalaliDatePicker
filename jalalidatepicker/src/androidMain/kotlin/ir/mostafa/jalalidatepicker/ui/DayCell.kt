@@ -7,7 +7,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -18,6 +23,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.dp
 import ir.mostafa.jalalidatepicker.calendar.CalendarDate
 import ir.mostafa.jalalidatepicker.locale.DateLabels
 import ir.mostafa.jalalidatepicker.model.DigitMode
@@ -78,25 +84,28 @@ internal fun DayCell(
         else -> colors.dayContentColor
     }
 
+    // Skip expensive animations for idle days — major month-swipe lag source.
+    val shouldAnimate = animations.enabled &&
+        role != DaySelectionRole.None &&
+        role != DaySelectionRole.RangeMiddle
+
     val containerColor by animateColorAsState(
         targetValue = targetContainer,
-        animationSpec = if (animations.enabled) animations.colorSpec else snap(),
+        animationSpec = if (shouldAnimate) animations.colorSpec else snap(),
         label = "dayContainer",
     )
     val contentColor by animateColorAsState(
         targetValue = targetContent,
-        animationSpec = if (animations.enabled) animations.colorSpec else snap(),
+        animationSpec = if (shouldAnimate) animations.colorSpec else snap(),
         label = "dayContent",
     )
     val scale by animateFloatAsState(
-        targetValue = if (isEndpoint && animations.enabled) 1.06f else 1f,
-        animationSpec = if (animations.enabled) {
-            animations.selectionSpec
-        } else {
-            snap()
-        },
+        targetValue = if (isEndpoint && animations.enabled) 1.04f else 1f,
+        animationSpec = if (isEndpoint && animations.enabled) animations.selectionSpec else snap(),
         label = "dayScale",
     )
+
+    val todayBorder = maxOf(shapes.todayBorderWidth, 2.dp)
 
     Box(
         modifier = Modifier.size(sizes.dayCellSize),
@@ -119,7 +128,7 @@ internal fun DayCell(
                 .then(
                     if (role == DaySelectionRole.Today && !isEndpoint) {
                         Modifier.border(
-                            width = shapes.todayBorderWidth,
+                            width = todayBorder,
                             color = colors.todayContentColor,
                             shape = shapes.day,
                         )
@@ -134,15 +143,27 @@ internal fun DayCell(
                 ),
             contentAlignment = Alignment.Center,
         ) {
-            Text(
-                text = DateLabels.formatNumber(date.day, digitMode),
-                color = contentColor,
-                style = if (isEndpoint || role == DaySelectionRole.Today) {
-                    typography.daySelected
-                } else {
-                    typography.day
-                },
-            )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = DateLabels.formatNumber(date.day, digitMode),
+                    color = contentColor,
+                    style = if (isEndpoint || role == DaySelectionRole.Today) {
+                        typography.daySelected
+                    } else {
+                        typography.day
+                    },
+                )
+                if (role == DaySelectionRole.Today && !isEndpoint) {
+                    Spacer(Modifier.height(2.dp))
+                    Box(
+                        modifier = Modifier
+                            .width(6.dp)
+                            .height(6.dp)
+                            .clip(CircleShape)
+                            .background(colors.todayContentColor),
+                    )
+                }
+            }
         }
     }
 }

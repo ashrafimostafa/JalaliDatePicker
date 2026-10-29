@@ -21,7 +21,7 @@ object JalaliDatePickerShapesFactory {
     fun create(
         containerCorner: Dp = 28.dp,
         dayShape: Shape = CircleShape,
-        todayBorderWidth: Dp = 1.5.dp,
+        todayBorderWidth: Dp = 2.dp,
     ): JalaliDatePickerShapes = JalaliDatePickerShapes(
         container = RoundedCornerShape(containerCorner),
         day = dayShape,

@@ -22,16 +22,17 @@ data class JalaliDatePickerAnimations(
 object JalaliDatePickerAnimationsFactory {
     fun create(
         enabled: Boolean = true,
-        monthChangeMillis: Int = 320,
-        contentFadeMillis: Int = 180,
+        /** Keep short — long slide was the main month-nav lag. */
+        monthChangeMillis: Int = 160,
+        contentFadeMillis: Int = 90,
     ): JalaliDatePickerAnimations = JalaliDatePickerAnimations(
         enabled = enabled,
         monthChangeMillis = monthChangeMillis,
         selectionSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMediumLow,
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMedium,
         ),
-        colorSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
+        colorSpec = tween(durationMillis = 120, easing = FastOutSlowInEasing),
         monthSlideSpec = tween(durationMillis = monthChangeMillis, easing = FastOutSlowInEasing),
         contentFadeMillis = contentFadeMillis,
     )

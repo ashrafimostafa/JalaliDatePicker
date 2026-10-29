@@ -83,7 +83,7 @@ class DefaultJalaliDatePickerStyleFactory(
             selectedDayContainerColor = colorScheme.primary,
             selectedDayContentColor = colorScheme.onPrimary,
             todayContentColor = colorScheme.primary,
-            todayContainerColor = Color.Transparent,
+            todayContainerColor = colorScheme.primaryContainer.copy(alpha = 0.55f),
             rangeSelectionContainerColor = colorScheme.primaryContainer.copy(alpha = 0.55f),
             navigationContentColor = colorScheme.onSurfaceVariant,
             dividerColor = colorScheme.outlineVariant,
