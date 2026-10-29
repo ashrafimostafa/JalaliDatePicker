@@ -26,7 +26,7 @@ dependencyResolutionManagement {
 }
 
 dependencies {
-    implementation("com.github.ashrafimostafa:JalaliDatePicker:0.2.0")
+    implementation("com.github.ashrafimostafa:JalaliDatePicker:0.3.0")
 }
 ```
 
